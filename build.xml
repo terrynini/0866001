@@ -1,47 +1,31 @@
 <?xml version="1.0"?>
 <project name="hw4" basedir="." default="test">
-    <property name="test.build.dir" value="build/test" />
-    <property name="test.src.dir" value="src" />
-
-    <path id="classpath.base" />
-
-    <path id="classpath.test">
+    <path id="test.classpath">
         <pathelement path="build/test"/>
+        <pathelement path="build/main"/>
+        <fileset dir="${ant.home}/lib" includes="*.jar" />
     </path>
 
-    <!--target name="test" depends="run, clean" /-->
-
-    <target name="compile" >
-        <mkdir dir="${test.build.dir}"/>
-        <javac srcdir="${test.src.dir}" destdir="${test.build.dir}" includeantruntime="false">
-            <classpath refid="classpath.test"/>
-        </javac>
-        <echo message="Build done" />
-    </target>
-
-    <target name="run" depends="compile">
-        <junit printsummary="on" haltonfailure="yes">
-            <classpath>
-                <path refid="classpath.test" />
-                <pathelement location="${test.build.dir}"/>
-            </classpath>
-            <formatter type="brief" usefile="false" />
-            <batchtest>
-                <fileset dir="${test.src.dir}" includes="**/*Test*.java" />
-            </batchtest>
-        </junit>
-    </target>
+    <target name="build" description="clean build" depends="clean, test" />
 
     <target name="clean">
-        <delete>
-            <fileset dir="${basedir}" includes="**/*.class" />
-        </delete>
-        <echo message="clean done" />
+        <delete dir="build"/>
     </target>
-        <!-- https://junit.org/junit5/docs/snapshot/user-guide/#running-tests-build-ant -->
+
+    <target name="init">
+        <mkdir dir="build/main"/>
+        <mkdir dir="build/test"/>
+        <mkdir dir="build/test-report"/>
+    </target>
+
+    <target name="compile" depends="init">
+        <javac destdir="build/test" classpathref="test.classpath" srcdir="src/" includeantruntime="false"/>
+    </target>
+
+    <!-- https://junit.org/junit5/docs/snapshot/user-guide/#running-tests-build-ant -->
     <target name="test.junit.launcher" depends="compile">
         <junitlauncher haltOnFailure="true" printSummary="true">
-            <classpath refid="classpath.test"/>
+            <classpath refid="test.classpath"/>
             <testclasses outputdir="build/test-report">
                 <fileset dir="build/test">
                     <include name="**/*Tests.class"/>
@@ -54,7 +38,7 @@
 
     <!-- https://junit.org/junit5/docs/current/user-guide/#running-tests-console-launcher -->
     <target name="test.console.launcher" depends="compile">
-        <java classpathref="classpath.test" classname="org.junit.platform.console.ConsoleLauncher" fork="true" failonerror="true">
+        <java classpathref="test.classpath" classname="org.junit.platform.console.ConsoleLauncher" fork="true" failonerror="true">
             <arg value="--scan-classpath"/>
             <arg line="--reports-dir build/test-report"/>
         </java>
