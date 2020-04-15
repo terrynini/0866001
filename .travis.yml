@@ -1,0 +1,10 @@
+language: java
+dist: xenial
+addons:
+    apt:
+        packages:
+            - junit
+jdk:
+    - oraclejdk11 
+   #after_success:
+   # - bash <(curl -s https://codecov.io/bash)
