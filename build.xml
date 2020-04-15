@@ -1,33 +1,72 @@
+<?xml version="1.0"?>
 <project name="hw4" basedir="." default="test">
-    <property name="dir.src"     value="src"/>
-    <property name="dir.build"   value="build"/>
-    <property name="dir.classes" value="${dir.build}/classes"/>
-    <property name="dir.jar"     value="${dir.build}/jar"/>
+    <property name="test.build.dir" value="build/test" />
+    <property name="test.src.dir" value="src" />
 
-    <property name="main-class"  value="PriorityQTest"/>
+    <path id="classpath.base" />
+
+    <path id="classpath.test">
+        <pathelement path="build/test"/>
+        <fileset dir="lib" includes="*.jar" />
+    </path>
+
+    <!--target name="test" depends="run, clean" /-->
+
+    <target name="compile" >
+        <mkdir dir="${test.build.dir}"/>
+        <javac srcdir="${test.src.dir}" destdir="${test.build.dir}" includeantruntime="false">
+            <classpath refid="classpath.test"/>
+        </javac>
+        <echo message="Build done" />
+    </target>
+
+    <target name="run" depends="compile">
+        <junit printsummary="on" haltonfailure="yes">
+            <classpath>
+                <path refid="classpath.test" />
+                <pathelement location="${test.build.dir}"/>
+            </classpath>
+            <formatter type="brief" usefile="false" />
+            <batchtest>
+                <fileset dir="${test.src.dir}" includes="**/*Test*.java" />
+            </batchtest>
+        </junit>
+    </target>
 
     <target name="clean">
-        <delete dir="${dir.build}"/>
+        <delete>
+            <fileset dir="${basedir}" includes="**/*.class" />
+        </delete>
+        <echo message="clean done" />
+    </target>
+        <!-- https://junit.org/junit5/docs/snapshot/user-guide/#running-tests-build-ant -->
+    <target name="test.junit.launcher" depends="compile">
+        <junitlauncher haltOnFailure="true" printSummary="true">
+            <classpath refid="classpath.test"/>
+            <testclasses outputdir="build/test-report">
+                <fileset dir="build/test">
+                    <include name="**/*Tests.class"/>
+                </fileset>
+                <listener type="legacy-xml" sendSysOut="true" sendSysErr="true"/>
+                <listener type="legacy-plain" sendSysOut="true" />
+            </testclasses>
+        </junitlauncher>
     </target>
 
-    <target name="compile">
-        <mkdir dir="${dir.classes}"/>
-        <javac srcdir="${dir.src}" destdir="${dir.classes}"/>
+    <!-- https://junit.org/junit5/docs/current/user-guide/#running-tests-console-launcher -->
+    <target name="test.console.launcher" depends="compile">
+        <java classpathref="classpath.test" classname="org.junit.platform.console.ConsoleLauncher" fork="true" failonerror="true">
+            <arg value="--scan-classpath"/>
+            <arg line="--reports-dir build/test-report"/>
+        </java>
+        <junitreport todir="build/test-report">
+            <fileset dir="build/test-report">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames" todir="build/test-report/html"/>
+        </junitreport>
     </target>
 
-    <target name="jar" depends="compile">
-        <mkdir dir="${dir.jar}"/>
-        <jar destfile="${dir.jar}/${ant.project.name}.jar" basedir="${dir.classes}">
-            <manifest>
-                <attribute name="Main-Class" value="${main-class}"/>
-            </manifest>
-        </jar>
-    </target>
+    <target name="test" depends="test.junit.launcher, test.console.launcher" />
 
-    <target name="run" depends="jar">
-        <java jar="${dir.jar}/${ant.project.name}.jar" fork="true"/>
-    </target>
-
-    <target name="clean-build" depends="clean,jar"/>
-    <target name="main" depends="clean,run"/>
 </project>
